@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MVCwithJQuery.Models;
 using MVCwithJQuery.Models.Data;
+using System.Linq;
 
 namespace MVCwithJQuery.Controllers
 {
@@ -11,15 +13,26 @@ namespace MVCwithJQuery.Controllers
         {
             _context = context;
         }
-        public IActionResult Index()
+        public IActionResult Index(int page=0)
         {
-           var list =  _context.Employees.ToList();
-            return View(list);
+            const int pageSize = 10;
+            var employeeList = _context.Employees
+                .Include(e => e.Department);
+            //Pagination
+            var count = employeeList.Count();
+            //0*10 =0 skip from 0 rec,take 10
+            var data = employeeList.Skip(page*pageSize).Take(pageSize).ToList();
+
+            ViewBag.MaxPage = (count/pageSize) - (count % pageSize==0?1:0);
+            ViewBag.Page= page;
+            return View(data);
         }
         public IActionResult Add()
         {
+            ViewBag.depList = _context.Departments.ToList();
             Employee employee = new Employee();
-            return View(employee);
+
+			return View(employee);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -31,7 +44,17 @@ namespace MVCwithJQuery.Controllers
             return RedirectToAction(nameof(Index));
 
         }
-        [HttpPut]
+        public IActionResult Edit(int id)
+        { 
+            var employee = _context.Employees
+                .Include(e=>e.Department)
+                .FirstOrDefault(e=>e.Id ==id);
+            ViewBag.depList = _context.Departments.ToList();
+            if(employee == null) return View(employee);
+            return View(employee); 
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Edit(Employee employee)
         {
             if (employee == null) return View();
