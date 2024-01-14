@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using MVCwithJQuery.Models;
 using MVCwithJQuery.Models.Data;
@@ -13,19 +14,25 @@ namespace MVCwithJQuery.Controllers
         {
             _context = context;
         }
-        public IActionResult Index(int page=0)
+        public IActionResult Index()
+		{
+			return View();
+        }
+        
+        public IActionResult GetEmployees(int page = 0)
         {
-            const int pageSize = 10;
-            var employeeList = _context.Employees
-                .Include(e => e.Department);
-            //Pagination
-            var count = employeeList.Count();
-            //0*10 =0 skip from 0 rec,take 10
-            var data = employeeList.Skip(page*pageSize).Take(pageSize).ToList();
+			const int pageSize = 10;
+			var employeeList = _context.Employees
+				.Include(e => e.Department);
+			//Pagination
+			var count = employeeList.Count();
+			//0*10 =0 skip from 0 rec,take 10
+			var data = employeeList.Skip(page * pageSize).Take(pageSize).ToList();
 
-            ViewBag.MaxPage = (count/pageSize) - (count % pageSize==0?1:0);
-            ViewBag.Page= page;
-            return View(data);
+			ViewBag.MaxPage = (count / pageSize) - (count % pageSize == 0 ? 1 : 0);
+			ViewBag.Page = page;
+
+			return Json(data);
         }
         public IActionResult Add()
         {
@@ -35,8 +42,7 @@ namespace MVCwithJQuery.Controllers
 			return View(employee);
         }
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Add(Employee employee)
+        public IActionResult Save(Employee employee)
         {
             if(employee == null) return View();
             _context.Employees.Add(employee);
@@ -55,7 +61,7 @@ namespace MVCwithJQuery.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(Employee employee)
+        public IActionResult Update(Employee employee)
         {
             if (employee == null) return View();
             _context.Employees.Update(employee);
